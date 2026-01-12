@@ -53,29 +53,44 @@ class ProfileViewModel(
         }
     }
 
-    fun updateProfile(onSuccess: () -> Unit) {
+    // [UPDATE] Menambahkan parameter onNavigateToLogin
+    fun updateProfile(onSuccess: () -> Unit, onNavigateToLogin: () -> Unit) {
         viewModelScope.launch {
             isLoading = true
             errorMessage = null // Reset error
             try {
                 val token = userPreferences.accessToken.first() ?: return@launch
 
-                // Panggil Repo dengan NIP
+                // 1. Simpan email LAMA sebelum request ke server
+                val oldEmail = user?.email
+
+                // 2. Request ke server (backend akan update email jika valid)
                 val updatedUser = repository.updateProfile(token, editName, editEmail, editNip)
 
                 if (updatedUser != null) {
-                    user = updatedUser
+                    // 3. Cek apakah email BERUBAH?
+                    // Jika oldEmail != newEmail, berarti token lama sudah tidak valid (identitas berubah)
+                    if (oldEmail != null && !updatedUser.email.equals(oldEmail, ignoreCase = true)) {
 
-                    // Simpan ke lokal lengkap dengan Email & NIP
-                    userPreferences.saveUser(
-                        id = updatedUser.id,
-                        name = updatedUser.name,
-                        email = updatedUser.email,
-                        nip = updatedUser.nip ?: "",
-                        role = updatedUser.role,
-                        token = token
-                    )
-                    onSuccess()
+                        // KASUS KHUSUS: Email Ganti -> Logout Paksa & Login Ulang
+                        userPreferences.clearSession() // Hapus token lama dari HP
+                        onNavigateToLogin()            // Panggil callback untuk pindah layar
+
+                    } else {
+                        // KASUS BIASA: Cuma ganti Nama/NIP -> Update UI seperti biasa
+                        user = updatedUser
+
+                        // Simpan data baru ke preference (token tetap sama)
+                        userPreferences.saveUser(
+                            id = updatedUser.id,
+                            name = updatedUser.name,
+                            email = updatedUser.email,
+                            nip = updatedUser.nip ?: "",
+                            role = updatedUser.role,
+                            token = token
+                        )
+                        onSuccess()
+                    }
                 } else {
                     errorMessage = "Gagal update! Server menolak data."
                 }

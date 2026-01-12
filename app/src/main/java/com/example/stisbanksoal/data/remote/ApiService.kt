@@ -18,7 +18,22 @@ interface ApiService {
     @GET("user/profile")
     suspend fun getProfile(@Header("Authorization") token: String): User
 
-    // --- MATA KULIAH ---
+    // --- UPDATE PROFIL ---
+    @PUT("user/profile")
+    suspend fun updateProfile(
+        @Header("Authorization") token: String,
+        @Body request: UpdateProfileRequest
+    ): Response<User>
+
+    // [PERBAIKAN PENTING]
+    // Ganti "user/password" menjadi "user/change-password" sesuai UserController.java
+    @PUT("user/change-password")
+    suspend fun updatePassword(
+        @Header("Authorization") token: String,
+        @Body request: UpdatePasswordRequest
+    ): Response<Any>
+
+    // --- MATA KULIAH & LAINNYA (Biarkan seperti semula) ---
     @GET("matakuliah")
     suspend fun getAllMataKuliah(@Header("Authorization") token: String): List<MataKuliah>
 
@@ -37,7 +52,6 @@ interface ApiService {
     @DELETE("matakuliah/{id}")
     suspend fun deleteMataKuliah(@Header("Authorization") token: String, @Path("id") id: Long): Response<Any>
 
-    // --- ASSIGN DOSEN (Admin) ---
     @GET("user/dosen")
     suspend fun getAllDosen(@Header("Authorization") token: String): List<User>
 
@@ -55,7 +69,6 @@ interface ApiService {
         @Path("dosenId") dosenId: Long
     ): Response<Any>
 
-    // --- PERTEMUAN ---
     @GET("pertemuan/matakuliah/{mkId}")
     suspend fun getPertemuanByMk(@Header("Authorization") token: String, @Path("mkId") mkId: Long): List<Pertemuan>
 
@@ -65,7 +78,6 @@ interface ApiService {
     @DELETE("pertemuan/{id}")
     suspend fun deletePertemuan(@Header("Authorization") token: String, @Path("id") id: Long): Response<Any>
 
-    // --- SOAL ---
     @GET("soal/search")
     suspend fun getSoalByPertemuan(
         @Header("Authorization") token: String,
@@ -88,19 +100,4 @@ interface ApiService {
         @Path("id") id: Long,
         @Part file: MultipartBody.Part
     ): Response<Any>
-
-    // --- UPDATE PROFIL & PASSWORD ---
-
-    @PUT("user/profile")
-    suspend fun updateProfile(
-        @Header("Authorization") token: String,
-        @Body request: UpdateProfileRequest
-    ): Response<User>
-
-    @PUT("user/password")
-    suspend fun updatePassword(
-        @Header("Authorization") token: String,
-        @Body request: UpdatePasswordRequest
-    ): Response<Any>
-
-} // <--- Pastikan kurung kurawal tutup ini ada, dan tidak ada kode lagi di bawahnya
+}

@@ -231,10 +231,22 @@ fun ProfileScreen(
                     },
                     confirmButton = {
                         Button(onClick = {
-                            viewModel.updateProfile {
-                                showEditDialog = false
-                                Toast.makeText(context, "Profil Berhasil Diperbarui!", Toast.LENGTH_SHORT).show()
-                            }
+                            // [UPDATE] Memanggil updateProfile dengan 2 skenario
+                            viewModel.updateProfile(
+                                onSuccess = {
+                                    // Skenario 1: Cuma ganti nama/NIP (Aman)
+                                    showEditDialog = false
+                                    Toast.makeText(context, "Profil Berhasil Diperbarui!", Toast.LENGTH_SHORT).show()
+                                },
+                                onNavigateToLogin = {
+                                    // Skenario 2: Ganti Email -> Harus Login Ulang
+                                    showEditDialog = false
+                                    Toast.makeText(context, "Email berubah. Silakan login kembali.", Toast.LENGTH_LONG).show()
+
+                                    // Panggil fungsi onLogout yang sudah ada di parameter ProfileScreen
+                                    onLogout()
+                                }
+                            )
                         }) {
                             if (viewModel.isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
                             else Text("Simpan")
