@@ -17,6 +17,7 @@ import com.example.stisbanksoal.ui.screens.admin.AdminDetailScreen // Pastikan i
 import com.example.stisbanksoal.ui.screens.admin.AdminHomeScreen
 import com.example.stisbanksoal.ui.screens.auth.LoginScreen
 import com.example.stisbanksoal.ui.screens.auth.RegisterScreen
+import com.example.stisbanksoal.ui.screens.common.ProfileScreen
 import com.example.stisbanksoal.ui.screens.dosen.DosenHomeScreen
 import com.example.stisbanksoal.ui.screens.dosen.PertemuanListScreen
 import com.example.stisbanksoal.ui.screens.dosen.SoalListScreen
@@ -74,17 +75,9 @@ class MainActivity : ComponentActivity() {
                         // 3. HALAMAN ADMIN HOME
                         composable("admin_home") {
                             AdminHomeScreen(
-                                onLogout = {
-                                    scope.launch {
-                                        userPreferences.clearAuthToken()
-                                        navController.navigate("login") {
-                                            popUpTo(0)
-                                        }
-                                    }
-                                }, // <-- Perhatikan koma ini (setelah kurung kurawal tutup)
-                                onMataKuliahClick = { mkId ->
-                                    navController.navigate("admin_mk_detail/$mkId")
-                                }
+                                onNavigateToProfile = { navController.navigate("profile") }, // Hubungkan ke sini
+                                onMataKuliahClick = { id -> navController.navigate("admin_detail/$id") },
+                                // onLogout hapus dari parameter AdminHomeScreen karena sudah ada di dalam Profile
                             )
                         }
 
@@ -102,7 +95,7 @@ class MainActivity : ComponentActivity() {
                             DosenHomeScreen(
                                 onLogout = {
                                     scope.launch {
-                                        userPreferences.clearAuthToken()
+                                        userPreferences.clearSession()
                                         navController.navigate("login") { popUpTo(0) }
                                     }
                                 },
@@ -132,6 +125,18 @@ class MainActivity : ComponentActivity() {
                             SoalListScreen(
                                 pertemuanId = pId,
                                 onBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("profile") {
+                            ProfileScreen(
+                                onLogout = {
+                                    navController.navigate("login") { popUpTo(0) }
+                                },
+                                onNavigateHome = {
+                                    // Cek role user, jika admin ke admin_home, jika dosen ke dosen_home
+                                    // Untuk sementara kita asumsikan Admin dulu atau navigasi mundur
+                                    navController.popBackStack()
+                                }
                             )
                         }
 

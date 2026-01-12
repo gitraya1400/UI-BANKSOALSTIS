@@ -2,6 +2,8 @@ package com.example.stisbanksoal.data.repository
 
 import com.example.stisbanksoal.data.model.MataKuliah
 import com.example.stisbanksoal.data.model.Pertemuan
+import com.example.stisbanksoal.data.model.UpdatePasswordRequest
+import com.example.stisbanksoal.data.model.UpdateProfileRequest
 import com.example.stisbanksoal.data.model.User
 import com.example.stisbanksoal.data.remote.ApiService
 import retrofit2.Response
@@ -17,8 +19,8 @@ class AdminRepository(private val apiService: ApiService) {
         return apiService.createMataKuliah("Bearer $token", mk)
     }
 
-    suspend fun deleteMataKuliah(token: String, id: Long) {
-        apiService.deleteMataKuliah("Bearer $token", id)
+    suspend fun deleteMataKuliah(token: String, id: Long): Response<Any> {
+        return apiService.deleteMataKuliah("Bearer $token", id)
     }
 
     // --- MANAJEMEN PERTEMUAN (Admin) ---
@@ -30,8 +32,8 @@ class AdminRepository(private val apiService: ApiService) {
         return apiService.createPertemuan("Bearer $token", p)
     }
 
-    suspend fun deletePertemuan(token: String, id: Long) {
-        apiService.deletePertemuan("Bearer $token", id)
+    suspend fun deletePertemuan(token: String, id: Long): Response<Any> {
+        return apiService.deletePertemuan("Bearer $token", id)
     }
 
     // --- MANAJEMEN DOSEN (Admin) ---
@@ -39,17 +41,30 @@ class AdminRepository(private val apiService: ApiService) {
         return apiService.getAllDosen("Bearer $token")
     }
 
-    // Ambil MK berdasarkan ID untuk melihat siapa pengajarnya (Update ApiService jika perlu endpoint spesifik,
-    // tapi biasanya kita bisa lihat dari data MK atau endpoint khusus.
-    // Asumsi: Kita pakai endpoint getMataKuliahById kalau backend menyediakan list pengajar di dalamnya)
-    // Sesuai Controller kamu: getDosenMataKuliah ada di Controller, tapi return List<MataKuliahDto>.
-    // Kita pakai assignDosen dan removeDosen saja yang jelas ada.
-
     suspend fun assignDosen(token: String, mkId: Long, dosenId: Long): Response<Any> {
         return apiService.assignDosen("Bearer $token", mkId, dosenId)
     }
 
     suspend fun removeDosen(token: String, mkId: Long, dosenId: Long): Response<Any> {
         return apiService.removeDosen("Bearer $token", mkId, dosenId)
+    }
+
+    // --- PROFILE USER ---
+    suspend fun getProfile(token: String): User {
+        return apiService.getProfile("Bearer $token")
+    }
+
+    // [BARU] Update Profil
+    suspend fun updateProfile(token: String, name: String, email: String): User? {
+        val req = UpdateProfileRequest(name, email)
+        val response = apiService.updateProfile("Bearer $token", req)
+        return if (response.isSuccessful) response.body() else null
+    }
+
+    // [BARU] Ganti Password
+    suspend fun updatePassword(token: String, oldPass: String, newPass: String): Boolean {
+        val req = UpdatePasswordRequest(oldPass, newPass)
+        val response = apiService.updatePassword("Bearer $token", req)
+        return response.isSuccessful
     }
 }

@@ -12,6 +12,7 @@ import com.example.stisbanksoal.data.repository.SoalRepository
 import com.example.stisbanksoal.ui.screens.admin.AdminDetailViewModel
 import com.example.stisbanksoal.ui.screens.admin.AdminViewModel
 import com.example.stisbanksoal.ui.screens.auth.AuthViewModel
+import com.example.stisbanksoal.ui.screens.common.ProfileViewModel
 import com.example.stisbanksoal.ui.screens.dosen.DosenViewModel // <-- INI IMPORT PENTING
 import com.example.stisbanksoal.ui.screens.dosen.PertemuanViewModel
 import com.example.stisbanksoal.ui.screens.dosen.SoalViewModel
@@ -35,7 +36,11 @@ class ViewModelFactory(private val context: Context) : ViewModelProvider.Factory
             val repo = AdminRepository(apiService)
             return AdminViewModel(repo, userPreferences) as T
         }
-
+        // 2. Admin Home
+        if (modelClass.isAssignableFrom(AdminViewModel::class.java)) {
+            val repo = AdminRepository(apiService)
+            return AdminViewModel(repo, userPreferences) as T
+        }
         // 3. Jika yang diminta DosenViewModel
         if (modelClass.isAssignableFrom(DosenViewModel::class.java)) {
             val repo = DosenRepository(apiService)
@@ -55,6 +60,13 @@ class ViewModelFactory(private val context: Context) : ViewModelProvider.Factory
         if (modelClass.isAssignableFrom(SoalViewModel::class.java)) {
             val repo = SoalRepository(apiService)
             return SoalViewModel(repo, userPreferences) as T
+        }
+        // 7. [BARU] Profile ViewModel
+        if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
+            // Kita bisa pakai AdminRepository karena dia punya fungsi getProfile
+            // Atau repo lain yang punya fungsi getProfile
+            val repo = AdminRepository(apiService)
+            return ProfileViewModel(repo, userPreferences) as T
         }
 
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")

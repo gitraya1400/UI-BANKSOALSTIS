@@ -46,7 +46,7 @@ class AuthViewModel(
                     val body = response.body()
                     if (body != null) {
                         // Simpan token ke HP
-                        userPreferences.saveAuthToken(
+                        userPreferences.saveToken(
                             token = body.accessToken,
                             role = body.role,
                             name = body.name,

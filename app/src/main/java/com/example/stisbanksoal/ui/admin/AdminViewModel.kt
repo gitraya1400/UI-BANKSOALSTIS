@@ -16,39 +16,48 @@ class AdminViewModel(
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
-    // DATA UTAMA: List Mata Kuliah
     var mataKuliahList by mutableStateOf<List<MataKuliah>>(emptyList())
-
-    // STATE STATUS
     var isLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
 
-    // FORM INPUT (Untuk Tambah/Edit MK)
+    // DATA USER DINAMIS
+    var userName by mutableStateOf("Pengguna") // Default
+    var userInitial by mutableStateOf("U")     // Default
+
+    // Form State
     var inputKode by mutableStateOf("")
     var inputNama by mutableStateOf("")
     var inputSks by mutableStateOf("")
     var inputSemester by mutableStateOf("")
     var inputDeskripsi by mutableStateOf("")
 
-    // Inisialisasi: Langsung ambil data pas dibuka
     init {
+        loadUserProfile() // Load data user saat init
         loadMataKuliah()
+    }
+
+    private fun loadUserProfile() {
+        viewModelScope.launch {
+            // Ambil Nama dari UserPreferences (asumsi kamu menyimpan nama saat login)
+            // Jika belum menyimpan nama, kita pakai "Admin" dulu atau ambil dari API Profile
+            val name = userPreferences.userName.first() ?: "Administrator"
+            userName = name
+
+            // Ambil inisial (2 huruf pertama)
+            userInitial = name.split(" ")
+                .take(2).joinToString("") { it.firstOrNull()?.toString() ?: "" }
+                .uppercase()
+        }
     }
 
     fun loadMataKuliah() {
         viewModelScope.launch {
             isLoading = true
-            errorMessage = null
             try {
-                // Ambil token dari memori HP
-                val token = userPreferences.accessToken.first()
-                if (token != null) {
-                    mataKuliahList = repository.getAllMataKuliah(token)
-                } else {
-                    errorMessage = "Token tidak ditemukan, silakan login ulang"
-                }
+                val token = userPreferences.accessToken.first() ?: return@launch
+                mataKuliahList = repository.getAllMataKuliah(token)
             } catch (e: Exception) {
-                errorMessage = "Gagal load data: ${e.message}"
+                errorMessage = "Gagal load MK: ${e.message}"
             } finally {
                 isLoading = false
             }
@@ -60,23 +69,23 @@ class AdminViewModel(
             isLoading = true
             try {
                 val token = userPreferences.accessToken.first() ?: return@launch
-
                 val newMk = MataKuliah(
                     kode = inputKode,
                     nama = inputNama,
-                    sks = inputSks.toIntOrNull() ?: 0,
+                    sks = inputSks.toIntOrNull() ?: 2,
                     semester = inputSemester.toIntOrNull() ?: 1,
                     deskripsi = inputDeskripsi
                 )
-
                 repository.createMataKuliah(token, newMk)
-
-                // Reset Form & Refresh Data
-                resetForm()
+                inputKode = ""
+                inputNama = ""
+                inputSks = ""
+                inputSemester = ""
+                inputDeskripsi = ""
                 loadMataKuliah()
                 onSuccess()
             } catch (e: Exception) {
-                errorMessage = "Gagal membuat MK: ${e.message}"
+                errorMessage = "Gagal buat MK: ${e.message}"
             } finally {
                 isLoading = false
             }
@@ -88,18 +97,10 @@ class AdminViewModel(
             try {
                 val token = userPreferences.accessToken.first() ?: return@launch
                 repository.deleteMataKuliah(token, id)
-                loadMataKuliah() // Refresh list setelah hapus
+                loadMataKuliah()
             } catch (e: Exception) {
                 errorMessage = "Gagal hapus: ${e.message}"
             }
         }
-    }
-
-    private fun resetForm() {
-        inputKode = ""
-        inputNama = ""
-        inputSks = ""
-        inputSemester = ""
-        inputDeskripsi = ""
     }
 }

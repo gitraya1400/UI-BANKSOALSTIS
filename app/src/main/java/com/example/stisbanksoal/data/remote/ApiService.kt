@@ -38,7 +38,7 @@ interface ApiService {
     suspend fun deleteMataKuliah(@Header("Authorization") token: String, @Path("id") id: Long): Response<Any>
 
     // --- ASSIGN DOSEN (Admin) ---
-    @GET("users/dosen")
+    @GET("user/dosen")
     suspend fun getAllDosen(@Header("Authorization") token: String): List<User>
 
     @POST("matakuliah/{mkId}/dosen/{dosenId}")
@@ -48,7 +48,6 @@ interface ApiService {
         @Path("dosenId") dosenId: Long
     ): Response<Any>
 
-    // [FIX] INI YANG TADI ERROR (KURANG)
     @DELETE("matakuliah/{mkId}/dosen/{dosenId}")
     suspend fun removeDosen(
         @Header("Authorization") token: String,
@@ -89,4 +88,19 @@ interface ApiService {
         @Path("id") id: Long,
         @Part file: MultipartBody.Part
     ): Response<Any>
-}
+
+    // --- UPDATE PROFIL & PASSWORD ---
+
+    @PUT("user/profile")
+    suspend fun updateProfile(
+        @Header("Authorization") token: String,
+        @Body request: UpdateProfileRequest
+    ): Response<User>
+
+    @PUT("user/password")
+    suspend fun updatePassword(
+        @Header("Authorization") token: String,
+        @Body request: UpdatePasswordRequest
+    ): Response<Any>
+
+} // <--- Pastikan kurung kurawal tutup ini ada, dan tidak ada kode lagi di bawahnya
