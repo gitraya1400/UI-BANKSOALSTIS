@@ -55,9 +55,15 @@ class AdminRepository(private val apiService: ApiService) {
     }
 
     // [BARU] Update Profil
-    suspend fun updateProfile(token: String, name: String, email: String): User? {
-        val req = UpdateProfileRequest(name, email)
+    suspend fun updateProfile(token: String, name: String, email: String, nip: String): User? {
+        // Kirim object request lengkap
+        val req = UpdateProfileRequest(name, email, nip)
         val response = apiService.updateProfile("Bearer $token", req)
+
+        if (!response.isSuccessful) {
+            // Log error di Logcat jika gagal (untuk debugging)
+            android.util.Log.e("UpdateProfile", "Gagal: ${response.code()} ${response.message()}")
+        }
         return if (response.isSuccessful) response.body() else null
     }
 

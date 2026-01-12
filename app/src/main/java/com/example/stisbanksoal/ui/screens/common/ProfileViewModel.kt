@@ -1,5 +1,6 @@
 package com.example.stisbanksoal.ui.screens.common
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -8,7 +9,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.stisbanksoal.data.local.UserPreferences
 import com.example.stisbanksoal.data.model.User
 import com.example.stisbanksoal.data.repository.AdminRepository
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -17,16 +17,16 @@ class ProfileViewModel(
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
-    // Data User Asli
     var user by mutableStateOf<User?>(null)
     var isLoading by mutableStateOf(false)
-    var errorMessage by mutableStateOf<String?>(null)
+    var errorMessage by mutableStateOf<String?>(null) // State untuk Error Toast
 
-    // State untuk Edit Form
+    // State Edit Form
     var editName by mutableStateOf("")
     var editEmail by mutableStateOf("")
+    var editNip by mutableStateOf("") // [BARU]
 
-    // State untuk Password Form
+    // State Password
     var oldPassword by mutableStateOf("")
     var newPassword by mutableStateOf("")
 
@@ -39,16 +39,14 @@ class ProfileViewModel(
             isLoading = true
             try {
                 val token = userPreferences.accessToken.first() ?: return@launch
-
-                // PERBAIKAN: Panggil fungsi repository wrapper, bukan api service langsung
                 user = repository.getProfile(token)
-
                 user?.let {
                     editName = it.name
                     editEmail = it.email
+                    editNip = it.nip ?: "" // Load NIP
                 }
             } catch (e: Exception) {
-                errorMessage = "Gagal memuat profil: ${e.message}"
+                errorMessage = "Gagal load profil: ${e.message}"
             } finally {
                 isLoading = false
             }
@@ -58,25 +56,32 @@ class ProfileViewModel(
     fun updateProfile(onSuccess: () -> Unit) {
         viewModelScope.launch {
             isLoading = true
+            errorMessage = null // Reset error
             try {
-                // Simulasi API Update
-                delay(1000)
+                val token = userPreferences.accessToken.first() ?: return@launch
 
-                user = user?.copy(name = editName, email = editEmail)
+                // Panggil Repo dengan NIP
+                val updatedUser = repository.updateProfile(token, editName, editEmail, editNip)
 
-                val token = userPreferences.accessToken.first() ?: ""
+                if (updatedUser != null) {
+                    user = updatedUser
 
-                // Panggil saveUser (Pastikan UserPreferences sudah diupdate)
-                userPreferences.saveUser(
-                    id = user?.id ?: 0,
-                    name = editName,
-                    role = user?.role ?: "dosen",
-                    token = token
-                )
-
-                onSuccess()
+                    // Simpan ke lokal lengkap dengan Email & NIP
+                    userPreferences.saveUser(
+                        id = updatedUser.id,
+                        name = updatedUser.name,
+                        email = updatedUser.email,
+                        nip = updatedUser.nip ?: "",
+                        role = updatedUser.role,
+                        token = token
+                    )
+                    onSuccess()
+                } else {
+                    errorMessage = "Gagal update! Server menolak data."
+                }
             } catch (e: Exception) {
-                errorMessage = "Gagal update: ${e.message}"
+                Log.e("ProfileVM", "Error update", e)
+                errorMessage = "Error: ${e.message}"
             } finally {
                 isLoading = false
             }
@@ -86,16 +91,28 @@ class ProfileViewModel(
     fun changePassword(onSuccess: () -> Unit) {
         viewModelScope.launch {
             isLoading = true
+            errorMessage = null
             try {
-                delay(1000)
-                oldPassword = ""
-                newPassword = ""
-                onSuccess()
+                val token = userPreferences.accessToken.first() ?: return@launch
+                val isSuccess = repository.updatePassword(token, oldPassword, newPassword)
+
+                if (isSuccess) {
+                    oldPassword = ""
+                    newPassword = ""
+                    onSuccess()
+                } else {
+                    errorMessage = "Password lama salah!"
+                }
             } catch (e: Exception) {
                 errorMessage = "Gagal ganti password: ${e.message}"
             } finally {
                 isLoading = false
             }
         }
+    }
+
+    // Fungsi helper untuk reset error setelah ditampilkan di UI
+    fun clearError() {
+        errorMessage = null
     }
 }

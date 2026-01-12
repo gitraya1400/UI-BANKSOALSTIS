@@ -4,15 +4,19 @@ data class User(
     val id: Long,
     val name: String,
     val email: String,
-    val nip: String?,
-    val role: String
+    val nip: String?, // Pastikan ada field NIP di sini
+    val role: String,
+    val accessToken: String? = null
 )
+
+// [UPDATE] Tambahkan nip di request
 data class UpdateProfileRequest(
     val name: String,
-    val email: String
+    val email: String,
+    val nip: String? // Tambahan
 )
 
 data class UpdatePasswordRequest(
-    val passwordLama: String, // Sesuaikan dengan nama field di Backend (oldPassword?)
-    val passwordBaru: String  // Sesuaikan dengan nama field di Backend (newPassword?)
+    val passwordLama: String,
+    val passwordBaru: String
 )

@@ -20,6 +20,7 @@ class UserPreferences(private val context: Context) {
     private val USER_ID = longPreferencesKey("user_id")
     private val USER_EMAIL = stringPreferencesKey("user_email")
 
+    private val USER_NIP = stringPreferencesKey("user_nip")
     // Get Data
     val accessToken: Flow<String?>
         get() = context.dataStore.data.map { preferences -> preferences[ACCESS_TOKEN] }
@@ -30,6 +31,8 @@ class UserPreferences(private val context: Context) {
     val userName: Flow<String?>
         get() = context.dataStore.data.map { preferences -> preferences[USER_NAME] }
 
+    val userNip: Flow<String?>
+        get() = context.dataStore.data.map { preferences -> preferences[USER_NIP] }
     // Save Login Sederhana
     suspend fun saveToken(token: String, role: String, name: String, email: String) {
         context.dataStore.edit { preferences ->
@@ -41,10 +44,12 @@ class UserPreferences(private val context: Context) {
     }
 
     // Save Data Lengkap (INI YANG DIBUTUHKAN PROFILE VIEW MODEL)
-    suspend fun saveUser(id: Long, name: String, role: String, token: String) {
+    suspend fun saveUser(id: Long, name: String, email: String, nip: String, role: String, token: String) {
         context.dataStore.edit { preferences ->
             preferences[USER_ID] = id
             preferences[USER_NAME] = name
+            preferences[USER_EMAIL] = email // Penting!
+            preferences[USER_NIP] = nip     // Penting!
             preferences[USER_ROLE] = role
             preferences[ACCESS_TOKEN] = token
         }

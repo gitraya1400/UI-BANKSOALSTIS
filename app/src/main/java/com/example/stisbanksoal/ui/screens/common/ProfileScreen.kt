@@ -3,24 +3,29 @@ package com.example.stisbanksoal.ui.screens.common
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions // [FIX] Import ini hilang sebelumnya
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType // [FIX] Import ini hilang sebelumnya
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,30 +36,37 @@ import com.example.stisbanksoal.ui.theme.*
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
-    onNavigateHome: () -> Unit // Callback balik ke Home
+    onNavigateHome: () -> Unit
 ) {
     val context = LocalContext.current
     val factory = remember { ViewModelFactory(context) }
-    val viewModel: ProfileViewModel = viewModel(factory = factory) // Pakai ViewModel baru
+    val viewModel: ProfileViewModel = viewModel(factory = factory)
 
-    // Dialog States
+    // States Dialog
     var showEditDialog by remember { mutableStateOf(false) }
     var showPasswordDialog by remember { mutableStateOf(false) }
+
+    // Effect untuk menampilkan Error Toast
+    LaunchedEffect(viewModel.errorMessage) {
+        viewModel.errorMessage?.let { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+            viewModel.clearError()
+        }
+    }
 
     Scaffold(
         containerColor = Gray50,
         bottomBar = {
-            // NAVBAR TETAP ADA (Konsisten)
             NavigationBar(containerColor = Color.White, tonalElevation = 8.dp) {
                 NavigationBarItem(
                     selected = false,
-                    onClick = onNavigateHome, // Balik ke Home
+                    onClick = onNavigateHome,
                     icon = { Icon(Icons.Default.Book, null) },
                     label = { Text("Beranda") },
                     colors = NavigationBarItemDefaults.colors(selectedIconColor = Blue900, indicatorColor = Blue50)
                 )
                 NavigationBarItem(
-                    selected = true, // Sedang aktif
+                    selected = true,
                     onClick = { },
                     icon = { Icon(Icons.Default.Person, null) },
                     label = { Text("Profil") },
@@ -65,14 +77,15 @@ fun ProfileScreen(
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
 
-            // Background Loading jika data belum siap
+            // Background Loading
             if (viewModel.isLoading && viewModel.user == null) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Blue900)
             } else {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues),
+                        .padding(paddingValues)
+                        .verticalScroll(rememberScrollState()), // Agar bisa discroll di layar kecil
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // --- HEADER PROFIL ---
@@ -97,7 +110,6 @@ fun ProfileScreen(
                                     .background(Yellow500),
                                 contentAlignment = Alignment.Center
                             ) {
-                                // Inisial dari Data Asli
                                 Text(
                                     text = viewModel.user?.name?.take(2)?.uppercase() ?: "US",
                                     fontSize = 36.sp,
@@ -108,7 +120,7 @@ fun ProfileScreen(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Nama & Role Asli
+                            // Nama & Role
                             Text(
                                 text = viewModel.user?.name ?: "Memuat...",
                                 color = Color.White,
@@ -125,7 +137,7 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // --- FORM INFO (Read Only) ---
+                    // --- INFO CARD ---
                     Column(
                         modifier = Modifier
                             .padding(horizontal = 24.dp)
@@ -133,20 +145,18 @@ fun ProfileScreen(
                     ) {
                         ProfileInfoCard("Nama Lengkap", viewModel.user?.name ?: "-", Icons.Default.Person)
                         Spacer(modifier = Modifier.height(16.dp))
-                        // Asumsi model User punya field NIP/Email
-                        ProfileInfoCard("Email", viewModel.user?.email ?: "-", Icons.Default.Email)
+                        ProfileInfoCard("NIP", viewModel.user?.nip ?: "-", Icons.Default.Badge)
                         Spacer(modifier = Modifier.height(16.dp))
-                        // Jika model User punya field nip, tampilkan. Jika tidak, hapus baris ini.
-                        // ProfileInfoCard("NIP", viewModel.user?.nip ?: "-", Icons.Default.Badge)
+                        ProfileInfoCard("Email", viewModel.user?.email ?: "-", Icons.Default.Email)
                     }
 
-                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.height(32.dp))
 
                     // --- ACTION BUTTONS ---
-                    Column(modifier = Modifier.padding(24.dp)) {
+                    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                         // Edit Profil Button
                         Button(
-                            onClick = { showEditDialog = true }, // Munculkan Dialog
+                            onClick = { showEditDialog = true },
                             modifier = Modifier.fillMaxWidth().height(50.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Blue900),
                             shape = RoundedCornerShape(12.dp)
@@ -160,7 +170,7 @@ fun ProfileScreen(
 
                         // Ganti Password Button
                         OutlinedButton(
-                            onClick = { showPasswordDialog = true }, // Munculkan Dialog
+                            onClick = { showPasswordDialog = true },
                             modifier = Modifier.fillMaxWidth().height(50.dp),
                             shape = RoundedCornerShape(12.dp)
                         ) {
@@ -182,6 +192,8 @@ fun ProfileScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Logout", fontWeight = FontWeight.Bold)
                         }
+
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
                 }
             }
@@ -201,10 +213,19 @@ fun ProfileScreen(
                             )
                             Spacer(Modifier.height(8.dp))
                             OutlinedTextField(
+                                value = viewModel.editNip,
+                                onValueChange = { viewModel.editNip = it },
+                                label = { Text("NIP") },
+                                modifier = Modifier.fillMaxWidth(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedTextField(
                                 value = viewModel.editEmail,
                                 onValueChange = { viewModel.editEmail = it },
                                 label = { Text("Email") },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                             )
                         }
                     },
@@ -212,9 +233,12 @@ fun ProfileScreen(
                         Button(onClick = {
                             viewModel.updateProfile {
                                 showEditDialog = false
-                                Toast.makeText(context, "Profil Diperbarui!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Profil Berhasil Diperbarui!", Toast.LENGTH_SHORT).show()
                             }
-                        }) { Text("Simpan") }
+                        }) {
+                            if (viewModel.isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                            else Text("Simpan")
+                        }
                     },
                     dismissButton = {
                         TextButton(onClick = { showEditDialog = false }) { Text("Batal") }
@@ -265,8 +289,10 @@ fun ProfileScreen(
     }
 }
 
+// [FIX] Ini adalah definisi fungsi ProfileInfoCard yang benar.
+// Isinya hanya tampilan, TIDAK BOLEH memanggil viewModel atau dirinya sendiri.
 @Composable
-fun ProfileInfoCard(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+fun ProfileInfoCard(label: String, value: String, icon: ImageVector) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
