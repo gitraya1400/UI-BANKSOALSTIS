@@ -1,26 +1,39 @@
 package com.example.stisbanksoal.data.model
 
-// Base response untuk List Soal
+import com.google.gson.annotations.SerializedName
+
+// Model Soal Lengkap
 data class Soal(
     val id: Long,
     val pertanyaan: String,
-    val tipeSoal: String,         // "PILIHAN_GANDA" atau "ESAI"
-    val tingkatKesulitan: String, // "MUDAH", "SEDANG", "SULIT"
-    val gambar: String?,          // Nama file gambar
-    val pertemuanId: Long
+    val tipeSoal: String,
+    val tingkatKesulitan: String,
+    val gambar: String?,
+    val pertemuanId: Long,
+
+    // Field Tambahan untuk UI Pilihan Ganda
+    @SerializedName("pilihanJawaban")
+    val opsiJawaban: List<String> = emptyList(),
+
+    @SerializedName("indexJawabanBenar")
+    val kunciJawabanIndex: Int? = null,
+
+    @SerializedName("jawabanKunci")
+    val kunciJawabanEsai: String? = null
 )
 
-// Untuk Create/Update Pilihan Ganda
+// Request untuk Create PG
 data class PilihanGandaRequest(
     val pertanyaan: String,
     val pertemuanId: Long,
     val tingkatKesulitan: String,
     val pilihanJawaban: List<String>,
-    val indexJawabanBenar: Int, // 0 = A, 1 = B, dst
+    @SerializedName("indexJawabanBenar")
+    val indexJawabanBenar: Int,
     val pembahasan: String? = null
 )
 
-// Untuk Create/Update Esai
+// Request untuk Create Esai
 data class EsaiRequest(
     val pertanyaan: String,
     val pertemuanId: Long,

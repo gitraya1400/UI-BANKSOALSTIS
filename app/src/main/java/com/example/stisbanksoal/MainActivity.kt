@@ -76,8 +76,7 @@ class MainActivity : ComponentActivity() {
                         composable("admin_home") {
                             AdminHomeScreen(
                                 onNavigateToProfile = { navController.navigate("profile") }, // Hubungkan ke sini
-                                onMataKuliahClick = { id -> navController.navigate("admin_detail/$id") },
-                                // onLogout hapus dari parameter AdminHomeScreen karena sudah ada di dalam Profile
+                                onMataKuliahClick = { id -> navController.navigate("admin_mk_detail/$id") }                                // onLogout hapus dari parameter AdminHomeScreen karena sudah ada di dalam Profile
                             )
                         }
 
