@@ -93,6 +93,20 @@ interface ApiService {
     @DELETE("soal/{id}")
     suspend fun deleteSoal(@Header("Authorization") token: String, @Path("id") id: Long): Response<Any>
 
+    // [BARU] Update (Edit)
+    @PUT("soal/pilihanganda/{id}")
+    suspend fun updatePilihanGanda(
+        @Header("Authorization") token: String,
+        @Path("id") id: Long,
+        @Body req: PilihanGandaRequest
+    ): Response<Any>
+
+    @PUT("soal/esai/{id}")
+    suspend fun updateEsai(
+        @Header("Authorization") token: String,
+        @Path("id") id: Long,
+        @Body req: EsaiRequest
+    ): Response<Any>
     @Multipart
     @POST("soal/{id}/gambar")
     suspend fun uploadGambar(

@@ -2,16 +2,17 @@ package com.example.stisbanksoal.data.model
 
 import com.google.gson.annotations.SerializedName
 
-// Model Soal Lengkap
+// RESPONSE: Data yang diterima dari server (untuk List & Detail)
 data class Soal(
     val id: Long,
     val pertanyaan: String,
-    val tipeSoal: String,
-    val tingkatKesulitan: String,
+    val tipeSoal: String,         // "PILIHAN_GANDA" atau "ESAI"
+    val tingkatKesulitan: String, // "MUDAH", "SEDANG", "SULIT"
     val gambar: String?,
     val pertemuanId: Long,
 
-    // Field Tambahan untuk UI Pilihan Ganda
+    // [PENTING] Tambahkan ini agar Detail tidak Force Close / Kosong
+    // Sesuaikan nama field JSON dari backend (biasanya 'pilihanJawaban' atau 'daftarPilihan')
     @SerializedName("pilihanJawaban")
     val opsiJawaban: List<String> = emptyList(),
 
@@ -22,22 +23,30 @@ data class Soal(
     val kunciJawabanEsai: String? = null
 )
 
-// Request untuk Create PG
+// REQUEST: Data yang dikirim ke server untuk Pilihan Ganda
 data class PilihanGandaRequest(
     val pertanyaan: String,
     val pertemuanId: Long,
     val tingkatKesulitan: String,
     val pilihanJawaban: List<String>,
-    @SerializedName("indexJawabanBenar")
     val indexJawabanBenar: Int,
-    val pembahasan: String? = null
+    val pembahasan: String? = "Belum ada pembahasan",
+
+    // [BARU] Field Wajib Backend
+    val tahunPembuatan: Int,
+    val semester: String // Format: "Ganjil 2024/2025"
 )
 
-// Request untuk Create Esai
+// REQUEST: Data yang dikirim ke server untuk Esai
 data class EsaiRequest(
     val pertanyaan: String,
     val pertemuanId: Long,
     val tingkatKesulitan: String,
     val jawabanKunci: String,
-    val rubrik: String? = null
+    val rubrik: String? = "Belum ada rubrik",
+
+    // [BARU] Field Wajib Backend (Sesuai EsaiDto)
+    val poinPenilaian: Int = 100, // Default 100 jika tidak diinput
+    val tahunPembuatan: Int,
+    val semester: String // Format: "Ganjil 2024/2025"
 )

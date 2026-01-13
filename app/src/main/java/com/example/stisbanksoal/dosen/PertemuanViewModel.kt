@@ -20,16 +20,13 @@ class PertemuanViewModel(
     var isLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
 
-    // Fungsi ini dipanggil saat layar dibuka
-    fun loadPertemuan(mkId: Long) {
+    fun loadPertemuan(mataKuliahId: Long) {
         viewModelScope.launch {
             isLoading = true
             errorMessage = null
             try {
-                val token = userPreferences.accessToken.first()
-                if (token != null) {
-                    pertemuanList = repository.getPertemuanByMk(token, mkId)
-                }
+                val token = userPreferences.accessToken.first() ?: return@launch
+                pertemuanList = repository.getPertemuanByMk(token, mataKuliahId)
             } catch (e: Exception) {
                 errorMessage = "Gagal memuat pertemuan: ${e.message}"
             } finally {

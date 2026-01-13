@@ -13,6 +13,7 @@ class SoalRepository(private val apiService: ApiService) {
         return apiService.getSoalByPertemuan("Bearer $token", pertemuanId)
     }
 
+    // --- CREATE ---
     suspend fun createPilihanGanda(token: String, request: PilihanGandaRequest): Response<Any> {
         return apiService.createPilihanGanda("Bearer $token", request)
     }
@@ -21,6 +22,16 @@ class SoalRepository(private val apiService: ApiService) {
         return apiService.createEsai("Bearer $token", request)
     }
 
+    // --- UPDATE (Wajib Ada untuk Fitur Edit) ---
+    suspend fun updatePilihanGanda(token: String, id: Long, request: PilihanGandaRequest): Response<Any> {
+        return apiService.updatePilihanGanda("Bearer $token", id, request)
+    }
+
+    suspend fun updateEsai(token: String, id: Long, request: EsaiRequest): Response<Any> {
+        return apiService.updateEsai("Bearer $token", id, request)
+    }
+
+    // --- DELETE & UPLOAD ---
     suspend fun deleteSoal(token: String, id: Long): Response<Any> {
         return apiService.deleteSoal("Bearer $token", id)
     }
