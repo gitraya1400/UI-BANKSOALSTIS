@@ -28,13 +28,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.stisbanksoal.data.model.Soal
 import com.example.stisbanksoal.ui.ViewModelFactory
+import com.example.stisbanksoal.ui.screens.common.ProfileScreen
 import com.example.stisbanksoal.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SoalListScreen(
     pertemuanId: Long,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateHome: () -> Unit, // Gunakan nama ini
+    onLogout: () -> Unit        // Gunakan nama ini
 ) {
     val context = LocalContext.current
     val factory = remember { ViewModelFactory(context) }
@@ -42,107 +45,140 @@ fun SoalListScreen(
 
     LaunchedEffect(pertemuanId) { viewModel.loadSoal(pertemuanId) }
 
-    // State untuk Dialog Form (Tambah/Edit)
     var showFormDialog by remember { mutableStateOf(false) }
-
-    // State untuk Dialog Detail
     var showDetailDialog by remember { mutableStateOf(false) }
     var selectedSoal by remember { mutableStateOf<Soal?>(null) }
+
+    // State untuk kontrol Navbar: 0 untuk Daftar Soal, 1 untuk Profil
+    var selectedTab by remember { mutableIntStateOf(0) }
 
     val headerBrush = Brush.verticalGradient(colors = listOf(Blue900, Blue700))
 
     Scaffold(
         containerColor = Gray50,
+        bottomBar = {
+            NavigationBar(containerColor = Color.White) {
+                NavigationBarItem(
+                    selected = selectedTab == 0,
+                    onClick = {
+                        selectedTab = 0
+                        onNavigateHome() // Panggil parameter di sini
+                    },
+                    icon = { Icon(Icons.Default.Home, "Beranda") },
+                    label = { Text("Beranda") }
+                )
+                NavigationBarItem(
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
+                    icon = { Icon(Icons.Default.Person, "Profil") },
+                    label = { Text("Profil") }
+                )
+            }
+        },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    viewModel.resetForm() // Pastikan form bersih untuk tambah baru
-                    showFormDialog = true
-                },
-                containerColor = Blue900,
-                contentColor = Color.White
-            ) {
-                Icon(Icons.Default.Add, "Tambah Soal")
+            if (selectedTab == 0) {
+                FloatingActionButton(
+                    onClick = {
+                        viewModel.resetForm()
+                        showFormDialog = true
+                    },
+                    containerColor = Blue900,
+                    contentColor = Color.White
+                ) {
+                    Icon(Icons.Default.Add, "Tambah")
+                }
             }
         }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
-
-            Column {
-                // --- CUSTOM HEADER ---
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(130.dp)
-                        .background(headerBrush, RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(top = 40.dp, start = 16.dp, end = 16.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+            if (selectedTab == 0) {
+                // --- TAB KONTEN SOAL ---
+                Column {
+                    // Header Biru
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(130.dp)
+                            .background(headerBrush, RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
                     ) {
-                        IconButton(
-                            onClick = onBack,
-                            modifier = Modifier.background(Color.White.copy(alpha = 0.2f), CircleShape)
+                        Row(
+                            modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp).fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Kembali", tint = Color.White)
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        Column {
-                            Text("Bank Soal", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                            Text("Kelola pertanyaan pertemuan ini", color = Blue100, fontSize = 14.sp)
-                        }
-                    }
-                }
-
-                // --- LIST ---
-                Box(modifier = Modifier.fillMaxSize()) {
-                    if (viewModel.isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                    } else if (viewModel.soalList.isEmpty()) {
-                        Column(
-                            modifier = Modifier.align(Alignment.Center),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(Icons.Default.FolderOpen, null, tint = Gray400, modifier = Modifier.size(64.dp))
-                            Spacer(Modifier.height(8.dp))
-                            Text("Belum ada soal", color = Gray500)
-                        }
-                    } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(viewModel.soalList) { soal ->
-                                SoalItemCard(
-                                    soal = soal,
-                                    onDelete = { viewModel.deleteSoal(soal.id) },
-                                    onEdit = {
-                                        viewModel.prepareEdit(soal)
-                                        showFormDialog = true
-                                    },
-                                    onClick = {
-                                        selectedSoal = soal
-                                        showDetailDialog = true
-                                    }
-                                )
+                            IconButton(
+                                onClick = onBack,
+                                modifier = Modifier.background(Color.White.copy(alpha = 0.2f), CircleShape)
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Kembali", tint = Color.White)
                             }
-                            item { Spacer(Modifier.height(80.dp)) }
+                            Spacer(Modifier.width(16.dp))
+                            Column {
+                                Text("Bank Soal", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                                Text("Kelola pertanyaan pertemuan ini", color = Blue100, fontSize = 14.sp)
+                            }
+                        }
+                    }
+
+                    // Daftar Soal
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        if (viewModel.isLoading) {
+                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        } else if (viewModel.soalList.isEmpty()) {
+                            Column(
+                                modifier = Modifier.align(Alignment.Center),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(Icons.Default.FolderOpen, null, tint = Gray400, modifier = Modifier.size(64.dp))
+                                Spacer(Modifier.height(8.dp))
+                                Text("Belum ada soal", color = Gray500)
+                            }
+                        } else {
+                            LazyColumn(
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(viewModel.soalList) { soal ->
+                                    SoalItemCard(
+                                        soal = soal,
+                                        onDelete = { viewModel.deleteSoal(soal.id) },
+                                        onEdit = {
+                                            viewModel.prepareEdit(soal)
+                                            showFormDialog = true
+                                        },
+                                        onClick = {
+                                            selectedSoal = soal
+                                            showDetailDialog = true
+                                        }
+                                    )
+                                }
+                                item { Spacer(Modifier.height(80.dp)) }
+                            }
                         }
                     }
                 }
+            } else {
+                ProfileScreen(onLogout = onLogout, onNavigateHome = onNavigateHome)
             }
 
-            // Error Overlay
+
+            // Error Overlay (Perbaikan Error Argument Mismatch)
             if (viewModel.errorMessage != null) {
-                Surface(color = Red500, shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth().padding(16.dp).align(Alignment.TopCenter)) {
-                    Text(text = viewModel.errorMessage ?: "", color = Color.White, modifier = Modifier.padding(12.dp))
+                Surface(
+                    color = Red500,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .align(Alignment.TopCenter)
+                ) {
+                    Text(
+                        text = viewModel.errorMessage ?: "",
+                        color = Color.White,
+                        modifier = Modifier.padding(12.dp)
+                    )
                 }
             }
         }
 
-        // --- DIALOG FORM (CREATE / EDIT) ---
+        // --- DIALOGS ---
         if (showFormDialog) {
             AddSoalDialog(
                 viewModel = viewModel,
@@ -156,7 +192,6 @@ fun SoalListScreen(
             )
         }
 
-        // --- DIALOG DETAIL ---
         if (showDetailDialog && selectedSoal != null) {
             DetailSoalDialog(
                 soal = selectedSoal!!,
@@ -186,9 +221,7 @@ fun DetailSoalDialog(soal: Soal, onDismiss: () -> Unit) {
 
                 if (soal.tipeSoal == "PILIHAN_GANDA") {
                     Text("Opsi Jawaban:", fontWeight = FontWeight.Bold)
-
-                    // PERBAIKAN: Gunakan let dan pastikan data tidak null sebelum loop
-                    val opsis = soal.opsiJawaban ?: emptyList() //
+                    val opsis = soal.opsiJawaban ?: emptyList()
 
                     if (opsis.isEmpty()) {
                         Text("- Tidak ada data opsi -", color = Color.Gray, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
@@ -218,7 +251,6 @@ fun DetailSoalDialog(soal: Soal, onDismiss: () -> Unit) {
 @Composable
 fun AddSoalDialog(viewModel: SoalViewModel, onDismiss: () -> Unit, onSave: () -> Unit) {
     val title = if(viewModel.isEditMode) "Edit Soal" else "Buat Soal Baru"
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title, fontWeight = FontWeight.Bold) },
@@ -227,7 +259,6 @@ fun AddSoalDialog(viewModel: SoalViewModel, onDismiss: () -> Unit, onSave: () ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     listOf("PILIHAN_GANDA", "ESAI").forEach { type ->
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end=12.dp)) {
-                            // Disable ganti tipe saat edit agar tidak error
                             RadioButton(
                                 selected = viewModel.tipeSoalInput == type,
                                 onClick = { if(!viewModel.isEditMode) viewModel.tipeSoalInput = type },
@@ -310,9 +341,7 @@ fun SoalItemCard(soal: Soal, onDelete: () -> Unit, onEdit: () -> Unit, onClick: 
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp),
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() } //
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
@@ -332,7 +361,7 @@ fun SoalItemCard(soal: Soal, onDelete: () -> Unit, onEdit: () -> Unit, onClick: 
             Spacer(Modifier.height(8.dp))
             Text(soal.pertanyaan, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(8.dp))
-            Text("Klik untuk melihat detail...", fontSize = 12.sp, color = Gray400)
+            Text("Klik untuk melihat detail...", fontSize = 12.sp, color = Color.Gray)
         }
     }
 }

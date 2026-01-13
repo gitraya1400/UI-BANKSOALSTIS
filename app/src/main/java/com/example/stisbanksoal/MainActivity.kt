@@ -9,9 +9,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.stisbanksoal.data.local.UserPreferences
 import com.example.stisbanksoal.ui.screens.admin.AdminDetailScreen // Pastikan ini di-import
 import com.example.stisbanksoal.ui.screens.admin.AdminHomeScreen
@@ -104,41 +106,51 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // 6. HALAMAN LIST PERTEMUAN (Update action klik-nya)
                         composable("pertemuan/{mkId}") { backStackEntry ->
                             val mkId = backStackEntry.arguments?.getString("mkId")?.toLongOrNull() ?: 0L
                             PertemuanListScreen(
                                 mataKuliahId = mkId,
                                 onBack = { navController.popBackStack() },
                                 onPertemuanClick = { pertemuanId ->
-                                    // ARUH KE HALAMAN SOAL
-                                    navController.navigate("soal/$pertemuanId")
+                                    // PERBAIKAN: Gunakan "soal_list" sesuai dengan rute yang didefinisikan di bawah
+                                    navController.navigate("soal_list/$pertemuanId")
                                 }
                             )
                         }
 
-                        // 7. HALAMAN SOAL (BARU)
-                        composable("soal/{pertemuanId}") { backStackEntry ->
-                            val pId = backStackEntry.arguments?.getString("pertemuanId")?.toLongOrNull() ?: 0L
-                            // Pastikan import SoalListScreen sudah ada
+                        // 7. HALAMAN SOAL
+                        composable(
+                            route = "soal_list/{pertemuanId}",
+                            arguments = listOf(navArgument("pertemuanId") { type = NavType.LongType })
+                        ) { backStackEntry ->
+                            val pertemuanId = backStackEntry.arguments?.getLong("pertemuanId") ?: 0L
+
                             SoalListScreen(
-                                pertemuanId = pId,
-                                onBack = { navController.popBackStack() }
+                                pertemuanId = pertemuanId,
+                                onBack = { navController.popBackStack() },
+                                onNavigateHome = {
+                                    navController.navigate("dosen_home") {
+                                        popUpTo("dosen_home") { inclusive = true }
+                                    }
+                                },
+                                onLogout = {
+                                    navController.navigate("login") {
+                                        popUpTo(0)
+                                    }
+                                }
                             )
                         }
+
                         composable("profile") {
                             ProfileScreen(
                                 onLogout = {
                                     navController.navigate("login") { popUpTo(0) }
                                 },
                                 onNavigateHome = {
-                                    // Cek role user, jika admin ke admin_home, jika dosen ke dosen_home
-                                    // Untuk sementara kita asumsikan Admin dulu atau navigasi mundur
                                     navController.popBackStack()
                                 }
                             )
                         }
-
                     } // <--- Tutup NavHost HARUS DI SINI (Paling Bawah)
                 }
             }
