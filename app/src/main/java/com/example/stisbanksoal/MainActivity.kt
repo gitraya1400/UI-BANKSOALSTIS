@@ -91,28 +91,37 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // 5. HALAMAN DOSEN HOME
                         composable("dosen_home") {
                             DosenHomeScreen(
-                                onLogout = {
-                                    scope.launch {
-                                        userPreferences.clearSession()
-                                        navController.navigate("login") { popUpTo(0) }
-                                    }
+                                onNavigateToPertemuan = { mkId ->
+                                    navController.navigate("pertemuan_list/$mkId")
                                 },
-                                onMataKuliahClick = { mkId ->
-                                    navController.navigate("pertemuan/$mkId")
+                                onNavigateToProfile = { // [BARU]
+                                    navController.navigate("profile")
+                                },
+                                onLogout = {
+                                    navController.navigate("login") { popUpTo(0) }
                                 }
                             )
                         }
 
-                        composable("pertemuan/{mkId}") { backStackEntry ->
-                            val mkId = backStackEntry.arguments?.getString("mkId")?.toLongOrNull() ?: 0L
+                        composable(
+                            route = "pertemuan_list/{mkId}",
+                            arguments = listOf(navArgument("mkId") { type = NavType.LongType })
+                        ) { backStackEntry ->
+                            val mkId = backStackEntry.arguments?.getLong("mkId") ?: 0L
                             PertemuanListScreen(
                                 mataKuliahId = mkId,
                                 onBack = { navController.popBackStack() },
+                                onNavigateHome = { // [BARU]
+                                    navController.navigate("dosen_home") {
+                                        popUpTo("dosen_home") { inclusive = true }
+                                    }
+                                },
+                                onNavigateToProfile = { // [BARU]
+                                    navController.navigate("profile")
+                                },
                                 onPertemuanClick = { pertemuanId ->
-                                    // PERBAIKAN: Gunakan "soal_list" sesuai dengan rute yang didefinisikan di bawah
                                     navController.navigate("soal_list/$pertemuanId")
                                 }
                             )

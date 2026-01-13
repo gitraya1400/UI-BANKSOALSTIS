@@ -37,6 +37,7 @@ import com.example.stisbanksoal.ui.theme.*
 fun ProfileScreen(
     onLogout: () -> Unit,
     onNavigateHome: () -> Unit
+
 ) {
     val context = LocalContext.current
     val factory = remember { ViewModelFactory(context) }

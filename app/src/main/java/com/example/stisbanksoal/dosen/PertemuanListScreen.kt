@@ -9,13 +9,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -25,11 +24,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.stisbanksoal.ui.ViewModelFactory
 import com.example.stisbanksoal.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PertemuanListScreen(
     mataKuliahId: Long,
     onBack: () -> Unit,
+    onNavigateHome: () -> Unit, // [BARU]
+    onNavigateToProfile: () -> Unit, // [BARU]
     onPertemuanClick: (Long) -> Unit
 ) {
     val context = LocalContext.current
@@ -40,79 +40,84 @@ fun PertemuanListScreen(
         viewModel.loadPertemuan(mataKuliahId)
     }
 
+    val headerBrush = Brush.verticalGradient(colors = listOf(Blue900, Blue700))
+
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Daftar Pertemuan", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Blue900
+        containerColor = Gray50,
+        bottomBar = {
+            NavigationBar(containerColor = Color.White) {
+                NavigationBarItem(
+                    selected = true, // Masih dianggap bagian dari Beranda
+                    onClick = onNavigateHome,
+                    icon = { Icon(Icons.Default.Home, "Beranda") },
+                    label = { Text("Beranda") }
                 )
-            )
-        },
-        containerColor = Gray50
-    ) { paddingValues ->
-
-        if (viewModel.isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-        } else {
-            LazyColumn(
-                modifier = Modifier.padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    Text("Pilih pertemuan untuk mengelola soal:", color = Gray500, fontSize = 14.sp, modifier = Modifier.padding(bottom=8.dp))
-                }
-
-                items(viewModel.pertemuanList) { pertemuan ->
-                    PertemuanCard(
-                        judul = "Pertemuan ${pertemuan.nomorPertemuan}",
-                        deskripsi = pertemuan.judul, // Asumsi judul materi ada di field judul
-                        onClick = { onPertemuanClick(pertemuan.id) }
-                    )
-                }
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onNavigateToProfile,
+                    icon = { Icon(Icons.Default.Person, "Profil") },
+                    label = { Text("Profil") }
+                )
             }
         }
-    }
-}
-
-@Composable
-fun PertemuanCard(judul: String, deskripsi: String, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
         ) {
+            // Header
             Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .background(Blue50, CircleShape),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .background(headerBrush, RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
             ) {
-                Text(
-                    text = judul.filter { it.isDigit() }, // Ambil angka pertemuan
-                    fontWeight = FontWeight.Bold,
-                    color = Blue900,
-                    fontSize = 18.sp
-                )
+                Row(
+                    modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp).fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.background(Color.White.copy(alpha = 0.2f), CircleShape)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Kembali", tint = Color.White)
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Text("Daftar Pertemuan", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                }
             }
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text(deskripsi, fontWeight = FontWeight.Bold, color = Gray900)
-                Text(judul, fontSize = 12.sp, color = Gray500)
+
+            // List Pertemuan
+            if (viewModel.isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Blue900)
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(viewModel.pertemuanList) { p ->
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(2.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.clickable { onPertemuanClick(p.id) }
+                        ) {
+                            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Surface(color = Blue50, shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text("${p.nomorPertemuan}", fontWeight = FontWeight.Bold, color = Blue900)
+                                    }
+                                }
+                                Spacer(Modifier.width(16.dp))
+                                Text(p.judul, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                            }
+                        }
+                    }
+                }
             }
-            Icon(Icons.Default.ChevronRight, null, tint = Gray400)
         }
     }
 }
